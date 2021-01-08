@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # @Time    : 8/1/2021 4:51 PM
-# @Author  : Feng Chenghao
+# @Author  : Feng
 # @FileName: inference.py
 from sklearn.externals import joblib
 from sklearn.model_selection import train_test_split
