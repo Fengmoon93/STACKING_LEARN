@@ -7,15 +7,14 @@ from sklearn.externals import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import load_breast_cancer
 import numpy as np
-#/home/ad00/8698732/Matrix_display/basic_0.pkl
-rootPath="/home/ad00/8698732/Matrix_display/"
+import GlobalPrameters as g
 def predict():
     basicModels=[]
     x, y = load_breast_cancer(return_X_y=True)
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2,random_state=23)
     for i in range(5):
-        basicModels.append(joblib.load(rootPath+'basic_{}.pkl'.format(i)))
-    metaModel=joblib.load(rootPath+"meta.pkl")
+        basicModels.append(joblib.load(g.modelSavePath+'/basic_{}.pkl'.format(i)))
+    metaModel=joblib.load(g.modelSavePath+"/meta.pkl")
     predictions = None
     for basicModel in basicModels:
         y_pred = basicModel.predict(x_test)

@@ -1,4 +1,6 @@
 import numpy as np
+import copy
+import os
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
@@ -8,7 +10,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.externals import joblib
-
+import GlobalPrameters as g
 class Ensemble:
     def __init__(self):
         self.x_train = None
@@ -20,14 +22,16 @@ class Ensemble:
         self.basicModels=[]
         self.metaModel=None
     def SaveModel(self):
+        if not os.path.exists(g.modelSavePath):
+            os.makedirs(g.modelSavePath)
         for id,clf in enumerate(self.basicModels):
-            joblib.dump(clf, "basic_"+str(id)+".pkl")
-        joblib.dump(self.metaModel, "meta.pkl")
+            joblib.dump(clf, g.modelSavePath+"/basic_"+str(id)+".pkl")
+        joblib.dump(self.metaModel,g.modelSavePath+"/meta.pkl")
     def load_data(self):
         #prepare basic data
         x, y = load_breast_cancer(return_X_y=True)
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(x, y, test_size=self.testSize, random_state=23)
-        print(self.x_test.shape,self.y_train.shape)
+        # print(self.x_test.shape,self.y_train.shape)
     def StackingModel(self,basicLearners=None,metaModel=None):
         #set basicModels
         if len(basicLearners)==0 or metaModel is None:
@@ -36,6 +40,11 @@ class Ensemble:
         test_meta_model = None
         # Start stacking
         for clf_id, clf in basicLearners:
+            def SaveBasicModel(clf):
+                res = copy.deepcopy(clf)
+                res.fit(self.x_train, self.y_train)
+                return res
+            self.basicModels.append(SaveBasicModel(clf))
             # Predictions for each classifier based on k-fold
             [predictions_clf,test_out0] = self.k_fold_cross_validation(clf)
             # Stack predictions which will form
@@ -106,9 +115,6 @@ class Ensemble:
             else:
                 predictions_clf_test = y_pred_test
         test_out=np.mean(predictions_clf_test.T,axis=1)
-
-        #add basic model
-        self.basicModels.append(clf)
         return [predictions_clf,test_out]
 
 
@@ -131,7 +137,6 @@ class Ensemble:
                 predictions = y_pred
         predictions=predictions.T
         out = self.metaModel.predict(predictions)
-        # out = self.metaModel.score(predictions, self.y_test)
         return out
 if __name__ == "__main__":
     ensemble = Ensemble()
@@ -143,4 +148,3 @@ if __name__ == "__main__":
                      ('gn', GaussianNB())]
     final_learner = LogisticRegression()
     ensemble.StackingModel(basicLearners,final_learner)
-    print(ensemble.predict(ensemble.x_test).shape)
